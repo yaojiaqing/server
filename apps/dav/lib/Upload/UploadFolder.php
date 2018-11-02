@@ -22,6 +22,7 @@
  */
 namespace OCA\DAV\Upload;
 
+use OCA\DAV\BackgroundJob\UploadCleanup;
 use OCA\DAV\Connector\Sabre\Directory;
 use Sabre\DAV\Exception\Forbidden;
 use Sabre\DAV\ICollection;
@@ -64,7 +65,14 @@ class UploadFolder implements ICollection {
 	}
 
 	function delete() {
+		//TODO proper DI etc
+		$jobList = \OC::$server->getJobList();
+		$uid = \OC::$server->getUserSession()->getUser()->getUID();
+
 		$this->node->delete();
+
+		// Remote the background cleanup job it is not needed anymore
+		$jobList->remove(UploadCleanup::class, ['uid' => $uid, 'folder' => $this->getName()]);
 	}
 
 	function getName() {

@@ -25,6 +25,7 @@ namespace OCA\DAV\Upload;
 
 use OC\Files\Filesystem;
 use OC\Files\View;
+use OCA\DAV\BackgroundJob\UploadCleanup;
 use OCA\DAV\Connector\Sabre\Directory;
 use Sabre\DAV\Exception\Forbidden;
 use Sabre\DAV\ICollection;
@@ -44,7 +45,13 @@ class UploadHome implements ICollection {
 	}
 
 	function createDirectory($name) {
+		//TODO: FIX PROPER DI! Or just set it properly in the constructor I do not care for now ;)
+		$joblist = \OC::$server->getJobList();
+		$uid = \OC::$server->getUserSession()->getUser()->getUID();
+
 		$this->impl()->createDirectory($name);
+
+		$joblist->add(UploadCleanup::class, ['uid' => $uid, 'folder' => $name]);
 	}
 
 	function getChild($name) {
