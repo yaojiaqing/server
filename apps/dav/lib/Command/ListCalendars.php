@@ -24,9 +24,12 @@ namespace OCA\DAV\Command;
 use OCA\DAV\CalDAV\BirthdayService;
 use OCA\DAV\CalDAV\CalDavBackend;
 use OCA\DAV\Connector\Sabre\Principal;
+use OCP\IConfig;
 use OCP\IDBConnection;
 use OCP\IGroupManager;
 use OCP\IUserManager;
+use OCP\IUserSession;
+use OCP\Share\IManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
@@ -44,16 +47,34 @@ class ListCalendars extends Command {
 	/** @var \OCP\IDBConnection */
 	protected $dbConnection;
 
+	/** @var IManager */
+	private $shareManager;
+
+	/** @var IUserSession */
+	private $userSession;
+
+	/** @var IConfig */
+	private $config;
+
 	/**
 	 * @param IUserManager $userManager
 	 * @param IGroupManager $groupManager
 	 * @param IDBConnection $dbConnection
 	 */
-	function __construct(IUserManager $userManager, IGroupManager $groupManager, IDBConnection $dbConnection) {
+	function __construct(IUserManager $userManager,
+		IGroupManager $groupManager,
+		IDBConnection $dbConnection,
+		IManager $shareManager,
+		IUserSession $userSession,
+		IConfig $config
+		) {
 		parent::__construct();
 		$this->userManager = $userManager;
 		$this->groupManager = $groupManager;
 		$this->dbConnection = $dbConnection;
+		$this->shareManager = $shareManager;
+		$this->userSession = $userSession;
+		$this->config = $config;
 	}
 
 	protected function configure() {
@@ -74,9 +95,9 @@ class ListCalendars extends Command {
 		$principalBackend = new Principal(
 			$this->userManager,
 			$this->groupManager,
-			\OC::$server->getShareManager(),
-			\OC::$server->getUserSession(),
-			\OC::$server->getConfig()
+			$this->shareManager,
+			$this->userSession,
+			$this->config
 		);
 		$random = \OC::$server->getSecureRandom();
 		$logger = \OC::$server->getLogger();
